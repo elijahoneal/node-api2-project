@@ -1,9 +1,10 @@
 // implement your posts router here
 const express = require('express')
 const Posts = require('./posts-model')
-const router = express.Router()
+const router = express.Router();
 
-router.get('/api/posts', (req, res)=>{
+
+router.get('', (req, res)=>{
     Posts.find()
     .then( posts => res.status(200).json(posts) )
     .catch(err => {
@@ -13,9 +14,9 @@ router.get('/api/posts', (req, res)=>{
 
 })
 
-router.get('/api/posts/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     const { id } = req.params
-    Posts.findById(id)
+  await  Posts.findById(id)
     .then( post => {
         if(post) {
             res.status(200).json(post)
@@ -29,49 +30,48 @@ router.get('/api/posts/:id', (req, res) => {
     })
 })
 
-router.post('/api/posts', (req,res) => {
-    const body = req.body
-    Posts.insert(body)
-    .then( newPost => {
-        if( !body.title || !body.contents ){
-            res.status(400).json({ message: "Please provide title and contents for the post" })
-        } else {
-            res.status(201).json(newPost)
-        }
-    } )
-    .catch(err => {
-        console.log(err)
-        res.status(500).json({ message: "There was an error while saving the post to the database" })
-    })
+router.post('/', async (req,res)  => {
+    const post = req.body
+    console.log(post)
+    if(!post.title || !post.contents) {
+        res.status(400).json({ message: "Please provide title and contents for the post" })
+    } else {
+      await  Posts.insert(post)
+        .then( post => res.status(201).json(post) )
+        .catch( err => {
+            console.log(err)
+            res.status(500).json({ message: "There was an error while saving the post to the database" })
+        } )
+    }
+    
 })
 
-router.put('/api/posts/:id', (req,res) => {
+router.put('/:id', async (req,res) => {
     const { id } = req.params
     const body = req.body
-    Posts.update(id , body)
-    .then( updatedPost => {
-        if(!id) {
-            res.status(404).json({ message: "The post with the specified ID does not exist" })
-        } else if(!body.title || !body.contents) {
-            res.status(400).json({ message: "Please provide title and contents for the post" })
-        } else {
-            res.status(200).json(updatedPost)
-        }
-    } )
-    .catch(err => {
-        console.log(err)
-        res.status(500).json({ message: "The post information could not be modified" })
-    })
+    if(!id){
+        res.status(404).json({ message: "The post with the specified ID does not exist" })
+    } else if(!body.title || !body.contents) {
+        res.status(400).json({ message: "Please provide title and contents for the post" })
+    } else {
+      await  Posts.update(id, body)
+        .then( updated => res.status(200).json(updated) )
+        .catch( err => {
+            console.log(err)
+            res.status(500).json({ message: "The post information could not be modified" })
+        } )
+    }
+    
 })
 
-router.delete('/api/posts/:id', (req,res) => {
+router.delete('/:id', async (req,res) => {
     const { id } = req.params
-    Posts.remove(id)
-    .then(() => {
+   await Posts.remove(id)
+    .then((deleted) => {
         if(!id){
             res.status(404).json({ message: "The post with the specified ID does not exist" })
         } else {
-            res.status(200)
+            res.status(200).json(deleted)
         }
     })
     .catch(err => {
@@ -80,14 +80,16 @@ router.delete('/api/posts/:id', (req,res) => {
     })
 })
 
-router.get('/api/posts/:id/comments', (req,res) => {
+router.get('/:id/comments', async (req,res) => {
+    
     const { id } = req.params
-    Posts.findPostComments(id)
+   await Posts.findPostComments(id)
     .then( comments => {
-        if(!id){
-            res.status(404).json({ message: "The post with the specified ID does not exist" })
-        } else {
+        if(comments){
             res.status(200).json(comments)
+            
+        } else {
+            res.status(404).json({ message: "The post with the specified ID does not exist" })
         }
     } )
     .catch( err => {
